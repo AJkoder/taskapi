@@ -178,3 +178,5 @@ Task
 - **Werkzeug** — password hashing
 - **Bleach** — HTML sanitization
 - **React** (CDN) — frontend UI
+
+  <img width="959" height="413" alt="image" src="https://github.com/user-attachments/assets/a5cd00df-bb14-4d6a-9509-1a1aebdff157" />
