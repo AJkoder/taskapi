@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TaskAPI Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
+
+    /* NAV */
+    nav { background: #1a1a2e; color: white; padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    nav h1 { font-size: 1.3rem; letter-spacing: 1px; }
+    nav span { font-size: 0.85rem; background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px; }
+    .logout-btn { background: #e74c3c; border: none; color: white; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin-left: 12px; }
+    .logout-btn:hover { background: #c0392b; }
+
+    /* AUTH CARD */
+    .auth-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .auth-card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); width: 380px; }
+    .auth-card h2 { text-align: center; margin-bottom: 28px; color: #1a1a2e; font-size: 1.5rem; }
+    .tab-btns { display: flex; gap: 0; margin-bottom: 24px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+    .tab-btn { flex: 1; padding: 10px; border: none; cursor: pointer; background: #f5f5f5; color: #666; font-weight: 500; transition: all 0.2s; }
+    .tab-btn.active { background: #1a1a2e; color: white; }
+
+    /* FORMS */
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #555; }
+    input, select { width: 100%; padding: 10px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.95rem; transition: border-color 0.2s; outline: none; }
+    input:focus, select:focus { border-color: #4361ee; }
+    .btn { width: 100%; padding: 12px; background: #4361ee; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn:hover { background: #3451d1; }
+    .btn:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-sm { padding: 6px 14px; font-size: 0.82rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
+    .btn-danger { background: #e74c3c; color: white; }
+    .btn-danger:hover { background: #c0392b; }
+    .btn-success { background: #27ae60; color: white; }
+    .btn-success:hover { background: #219a52; }
+    .btn-secondary { background: #95a5a6; color: white; }
+    .btn-secondary:hover { background: #7f8c8d; }
+    .btn-warning { background: #f39c12; color: white; }
+    .btn-warning:hover { background: #d68910; }
+
+    /* ALERT */
+    .alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.88rem; font-weight: 500; }
+    .alert-error { background: #fdecea; color: #c0392b; border-left: 4px solid #e74c3c; }
+    .alert-success { background: #eafaf1; color: #1e8449; border-left: 4px solid #27ae60; }
+
+    /* DASHBOARD */
+    .dashboard { max-width: 860px; margin: 0 auto; padding: 32px 16px; }
+    .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: gap; }
+    .dashboard-header h2 { font-size: 1.3rem; }
+    .role-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .role-admin { background: #fdecea; color: #c0392b; }
+    .role-user { background: #eaf4fb; color: #2980b9; }
+
+    /* ADD TASK */
+    .add-task-card { background: white; border-radius: 14px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+    .add-task-card h3 { font-size: 1rem; margin-bottom: 16px; color: #555; }
+    .task-form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .task-form-row input { flex: 2; min-width: 160px; }
+    .task-form-row input:nth-child(2) { flex: 3; }
+    .task-form-row button { flex: 0 0 auto; padding: 10px 22px; }
+
+    /* TASK LIST */
+    .tasks-card { background: white; border-radius: 14px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+    .tasks-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .tasks-header h3 { font-size: 1rem; color: #555; }
+    .task-count { background: #f0f2f5; padding: 3px 10px; border-radius: 12px; font-size: 0.82rem; font-weight: 600; }
+
+    .task-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f0f2f5; }
+    .task-item:last-child { border-bottom: none; }
+    .task-check { width: 18px; height: 18px; cursor: pointer; accent-color: #4361ee; flex-shrink: 0; }
+    .task-info { flex: 1; min-width: 0; }
+    .task-title { font-weight: 600; font-size: 0.95rem; }
+    .task-title.done { text-decoration: line-through; color: #aaa; }
+    .task-desc { font-size: 0.82rem; color: #888; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .task-meta { font-size: 0.75rem; color: #bbb; margin-top: 2px; }
+    .task-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* EDIT MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .modal { background: white; border-radius: 14px; padding: 28px; width: 420px; max-width: 95vw; box-shadow: 0 16px 48px rgba(0,0,0,0.2); }
+    .modal h3 { margin-bottom: 20px; font-size: 1.1rem; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-actions button { flex: 1; padding: 10px; }
+
+    /* ADMIN SECTION */
+    .admin-section { margin-top: 32px; border-top: 2px dashed #e74c3c; padding-top: 24px; }
+    .admin-badge-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .admin-badge-header h3 { color: #c0392b; font-size: 1rem; }
+    .user-item { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #f0f2f5; }
+    .user-item:last-child { border-bottom: none; }
+    .user-avatar { width: 34px; height: 34px; background: #4361ee; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.9rem; }
+
+    .empty-state { text-align: center; padding: 40px; color: #aaa; }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+    .spinner { text-align: center; padding: 20px; color: #888; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const API = "http://127.0.0.1:5000/api/v1";
+
+    function Alert({ type, msg }) {
+      if (!msg) return null;
+      return <div className={`alert alert-${type}`}>{msg}</div>;
+    }
+
+    // ==================== AUTH PAGE ====================
+    function AuthPage({ onLogin }) {
+      const [tab, setTab] = React.useState("login");
+      const [form, setForm] = React.useState({ username: "", password: "", role: "user" });
+      const [msg, setMsg] = React.useState({ type: "", text: "" });
+      const [loading, setLoading] = React.useState(false);
+
+      const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+      const handleSubmit = async () => {
+        setMsg({ type: "", text: "" });
+        if (!form.username.trim() || !form.password.trim()) {
+          setMsg({ type: "error", text: "Please fill in all fields" }); return;
+        }
+        setLoading(true);
+        try {
+          const endpoint = tab === "login" ? "/login" : "/signup";
+          const body = tab === "login"
+            ? { username: form.username, password: form.password }
+            : { username: form.username, password: form.password, role: form.role };
+
+          const res = await fetch(API + endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          if (!res.ok) { setMsg({ type: "error", text: data.error }); return; }
+
+          if (tab === "login") {
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("user", JSON.stringify(data.user));
+            onLogin(data.user, data.token);
+          } else {
+            setMsg({ type: "success", text: "Account created! You can now log in." });
+            setTab("login");
+          }
+        } catch {
+          setMsg({ type: "error", text: "Cannot connect to server. Is the backend running?" });
+        } finally { setLoading(false); }
+      };
+
+      return (
+        <div className="auth-container">
+          <div className="auth-card">
+            <h2>🗂️ TaskAPI</h2>
+            <div className="tab-btns">
+              <button className={`tab-btn ${tab === "login" ? "active" : ""}`} onClick={() => { setTab("login"); setMsg({}); }}>Login</button>
+              <button className={`tab-btn ${tab === "signup" ? "active" : ""}`} onClick={() => { setTab("signup"); setMsg({}); }}>Register</button>
+            </div>
+            <Alert type={msg.type} msg={msg.text} />
+            <div className="form-group">
+              <label>Username</label>
+              <input name="username" placeholder="Enter username" value={form.username} onChange={handleChange}
+                onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input name="password" type="password" placeholder="Enter password" value={form.password} onChange={handleChange}
+                onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+            </div>
+            {tab === "signup" && (
+              <div className="form-group">
+                <label>Role</label>
+                <select name="role" value={form.role} onChange={handleChange}>
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            )}
+            <button className="btn" onClick={handleSubmit} disabled={loading}>
+              {loading ? "Please wait..." : tab === "login" ? "Login" : "Create Account"}
+            </button>
+            {tab === "login" && (
+              <p style={{ fontSize: "0.78rem", color: "#aaa", textAlign: "center", marginTop: 14 }}>
+                Default admin: admin / admin123
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== EDIT MODAL ====================
+    function EditModal({ task, onSave, onClose }) {
+      const [form, setForm] = React.useState({ title: task.title, description: task.description || "" });
+      return (
+        <div className="modal-overlay" onClick={onClose}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>✏️ Edit Task</h3>
+            <div className="form-group">
+              <label>Title</label>
+              <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Description</label>
+              <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+            </div>
+            <div className="modal-actions">
+              <button className="btn-sm btn-secondary" style={{ padding: "10px" }} onClick={onClose}>Cancel</button>
+              <button className="btn" onClick={() => onSave(form)}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ==================== DASHBOARD ====================
+    function Dashboard({ user, token, onLogout }) {
+      const [tasks, setTasks] = React.useState([]);
+      const [users, setUsers] = React.useState([]);
+      const [newTask, setNewTask] = React.useState({ title: "", description: "" });
+      const [editTask, setEditTask] = React.useState(null);
+      const [msg, setMsg] = React.useState({ type: "", text: "" });
+      const [loading, setLoading] = React.useState(true);
+
+      const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${token}` };
+      const flash = (type, text) => { setMsg({ type, text }); setTimeout(() => setMsg({}), 3500); };
+
+      const fetchTasks = async () => {
+        try {
+          const res = await fetch(API + "/tasks", { headers });
+          const data = await res.json();
+          if (res.ok) setTasks(data.tasks);
+        } catch { flash("error", "Failed to load tasks"); }
+        finally { setLoading(false); }
+      };
+
+      const fetchUsers = async () => {
+        if (user.role !== "admin") return;
+        const res = await fetch(API + "/admin/users", { headers });
+        const data = await res.json();
+        if (res.ok) setUsers(data.users);
+      };
+
+      React.useEffect(() => { fetchTasks(); fetchUsers(); }, []);
+
+      const addTask = async () => {
+        if (!newTask.title.trim()) { flash("error", "Title cannot be empty"); return; }
+        const res = await fetch(API + "/tasks", {
+          method: "POST", headers,
+          body: JSON.stringify(newTask)
+        });
+        const data = await res.json();
+        if (res.ok) { setTasks([...tasks, data.task]); setNewTask({ title: "", description: "" }); flash("success", "Task added!"); }
+        else flash("error", data.error);
+      };
+
+      const toggleComplete = async (task) => {
+        const res = await fetch(API + `/tasks/${task.id}`, {
+          method: "PUT", headers,
+          body: JSON.stringify({ completed: !task.completed })
+        });
+        const data = await res.json();
+        if (res.ok) setTasks(tasks.map(t => t.id === task.id ? data.task : t));
+      };
+
+      const deleteTask = async (id) => {
+        if (!confirm("Delete this task?")) return;
+        const res = await fetch(API + `/tasks/${id}`, { method: "DELETE", headers });
+        if (res.ok) { setTasks(tasks.filter(t => t.id !== id)); flash("success", "Task deleted"); }
+      };
+
+      const saveEdit = async (form) => {
+        const res = await fetch(API + `/tasks/${editTask.id}`, {
+          method: "PUT", headers,
+          body: JSON.stringify(form)
+        });
+        const data = await res.json();
+        if (res.ok) { setTasks(tasks.map(t => t.id === editTask.id ? data.task : t)); setEditTask(null); flash("success", "Task updated"); }
+        else flash("error", data.error);
+      };
+
+      const deleteUser = async (uid) => {
+        if (!confirm("Delete this user?")) return;
+        const res = await fetch(API + `/admin/users/${uid}`, { method: "DELETE", headers });
+        const data = await res.json();
+        if (res.ok) { setUsers(users.filter(u => u.id !== uid)); flash("success", data.message); }
+        else flash("error", data.error);
+      };
+
+      const done = tasks.filter(t => t.completed).length;
+
+      return (
+        <>
+          <nav>
+            <h1>🗂️ TaskAPI Dashboard</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span>👤 {user.username}</span>
+              <span className={`role-badge role-${user.role}`}>{user.role}</span>
+              <button className="logout-btn" onClick={onLogout}>Logout</button>
+            </div>
+          </nav>
+
+          <div className="dashboard">
+            <Alert type={msg.type} msg={msg.text} />
+
+            {/* Add Task */}
+            <div className="add-task-card">
+              <h3>➕ Add New Task</h3>
+              <div className="task-form-row">
+                <input placeholder="Task title *" value={newTask.title}
+                  onChange={e => setNewTask({ ...newTask, title: e.target.value })}
+                  onKeyDown={e => e.key === "Enter" && addTask()} />
+                <input placeholder="Description (optional)" value={newTask.description}
+                  onChange={e => setNewTask({ ...newTask, description: e.target.value })}
+                  onKeyDown={e => e.key === "Enter" && addTask()} />
+                <button className="btn" style={{ width: "auto" }} onClick={addTask}>Add Task</button>
+              </div>
+            </div>
+
+            {/* Task List */}
+            <div className="tasks-card">
+              <div className="tasks-header">
+                <h3>📋 Tasks</h3>
+                <span className="task-count">{done}/{tasks.length} done</span>
+              </div>
+
+              {loading && <div className="spinner">Loading tasks…</div>}
+
+              {!loading && tasks.length === 0 && (
+                <div className="empty-state">
+                  <div className="icon">📭</div>
+                  <div>No tasks yet. Add one above!</div>
+                </div>
+              )}
+
+              {tasks.map(task => (
+                <div className="task-item" key={task.id}>
+                  <input type="checkbox" className="task-check" checked={task.completed}
+                    onChange={() => toggleComplete(task)} />
+                  <div className="task-info">
+                    <div className={`task-title ${task.completed ? "done" : ""}`}>{task.title}</div>
+                    {task.description && <div className="task-desc">{task.description}</div>}
+                    <div className="task-meta">
+                      ID #{task.id} · {new Date(task.created_at).toLocaleDateString()}
+                      {user.role === "admin" && ` · User #${task.user_id}`}
+                    </div>
+                  </div>
+                  <div className="task-actions">
+                    <button className="btn-sm btn-warning" onClick={() => setEditTask(task)}>Edit</button>
+                    <button className="btn-sm btn-danger" onClick={() => deleteTask(task.id)}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Admin Panel */}
+            {user.role === "admin" && (
+              <div className="tasks-card admin-section">
+                <div className="admin-badge-header">
+                  <h3>🛡️ Admin Panel — All Users</h3>
+                  <span className="role-badge role-admin">ADMIN ONLY</span>
+                </div>
+                {users.map(u => (
+                  <div className="user-item" key={u.id}>
+                    <div className="user-avatar">{u.username[0].toUpperCase()}</div>
+                    <div style={{ flex: 1 }}>
+                      <strong>{u.username}</strong>
+                      <span className={`role-badge role-${u.role}`} style={{ marginLeft: 8 }}>{u.role}</span>
+                    </div>
+                    <span style={{ fontSize: "0.8rem", color: "#aaa", marginRight: 10 }}>ID #{u.id}</span>
+                    {u.id !== user.id && (
+                      <button className="btn-sm btn-danger" onClick={() => deleteUser(u.id)}>Delete</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {editTask && <EditModal task={editTask} onSave={saveEdit} onClose={() => setEditTask(null)} />}
+        </>
+      );
+    }
+
+    // ==================== ROOT ====================
+    function App() {
+      const [user, setUser] = React.useState(() => {
+        try { return JSON.parse(localStorage.getItem("user")); } catch { return null; }
+      });
+      const [token, setToken] = React.useState(() => localStorage.getItem("token") || null);
+
+      const handleLogin = (u, t) => { setUser(u); setToken(t); };
+      const handleLogout = () => {
+        localStorage.removeItem("token"); localStorage.removeItem("user");
+        setUser(null); setToken(null);
+      };
+
+      if (!user || !token) return <AuthPage onLogin={handleLogin} />;
+      return <Dashboard user={user} token={token} onLogout={handleLogout} />;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

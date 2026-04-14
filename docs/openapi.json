@@ -1,0 +1,260 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "TaskAPI",
+    "version": "1.0.0",
+    "description": "A secure REST API for task management with JWT authentication and role-based access control."
+  },
+  "servers": [
+    { "url": "http://127.0.0.1:5000/api/v1", "description": "Local development server" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "username": { "type": "string" },
+          "role": { "type": "string", "enum": ["user", "admin"] }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "completed": { "type": "boolean" },
+          "user_id": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "tags": ["System"],
+        "responses": {
+          "200": { "description": "Server is running" }
+        }
+      }
+    },
+    "/signup": {
+      "post": {
+        "summary": "Register a new user",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string", "minLength": 3, "maxLength": 50 },
+                  "password": { "type": "string", "minLength": 6 },
+                  "role": { "type": "string", "enum": ["user", "admin"], "default": "user" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User created successfully" },
+          "400": { "description": "Validation error" },
+          "409": { "description": "Username already taken" }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "summary": "Login and get JWT token",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid credentials" },
+          "429": { "description": "Too many login attempts" }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "summary": "Get current user profile",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "User profile" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/tasks": {
+      "get": {
+        "summary": "Get all tasks (own tasks; admin sees all)",
+        "tags": ["Tasks"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tasks": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Task" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new task",
+        "tags": ["Tasks"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title"],
+                "properties": {
+                  "title": { "type": "string", "maxLength": 200 },
+                  "description": { "type": "string", "maxLength": 500 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Task created" },
+          "400": { "description": "Validation error" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/tasks/{task_id}": {
+      "parameters": [
+        { "name": "task_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+      ],
+      "get": {
+        "summary": "Get a single task",
+        "tags": ["Tasks"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Task found" },
+          "403": { "description": "Unauthorized" },
+          "404": { "description": "Not found" }
+        }
+      },
+      "put": {
+        "summary": "Update a task",
+        "tags": ["Tasks"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "completed": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Task updated" },
+          "403": { "description": "Unauthorized" },
+          "404": { "description": "Not found" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a task",
+        "tags": ["Tasks"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Task deleted" },
+          "403": { "description": "Unauthorized" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "summary": "Admin: list all users",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of users" },
+          "403": { "description": "Admin access required" }
+        }
+      }
+    },
+    "/admin/users/{user_id}": {
+      "parameters": [
+        { "name": "user_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+      ],
+      "delete": {
+        "summary": "Admin: delete a user and their tasks",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "User deleted" },
+          "403": { "description": "Admin access required" },
+          "404": { "description": "User not found" }
+        }
+      }
+    }
+  }
+}
